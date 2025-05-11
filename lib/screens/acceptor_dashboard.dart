@@ -97,46 +97,48 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
   }
 
   Widget _buildAvailableDonationsCard(int availableCount) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      margin: const EdgeInsets.only(bottom: 24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2D2D2D),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 10,
-            offset: const Offset(4, 4),
-          ),
-          BoxShadow(
-            color: const Color(0xFFF9F7F3).withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(-4, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Available Donations',
-            style: GoogleFonts.inter(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFFF9F7F3),
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        margin: const EdgeInsets.only(bottom: 24),
+        decoration: BoxDecoration(
+          color: const Color(0xFF2D2D2D),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 10,
+              offset: const Offset(4, 4),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '$availableCount item${availableCount == 1 ? '' : 's'} available to claim',
-            style: GoogleFonts.inter(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF39FF14),
+            BoxShadow(
+              color: const Color(0xFFF9F7F3).withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(-4, -4),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Available Donations',
+              style: GoogleFonts.inter(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFFF9F7F3),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '$availableCount item${availableCount == 1 ? '' : 's'} available to claim',
+              style: GoogleFonts.inter(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF39FF14),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

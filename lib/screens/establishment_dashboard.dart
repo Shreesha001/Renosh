@@ -66,9 +66,10 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
     );
@@ -156,10 +157,11 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
       }
 
       // Using Firestore to fetch user data
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
       if (doc.exists && doc.data()!['role'] == 'Food Establishment') {
         setState(() {
           _establishmentName = doc.data()!['name'];
@@ -193,14 +195,20 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
       final now = DateTime.now();
       final startDate = now.subtract(Duration(days: 7));
       // Using Firestore to fetch sustainability metrics
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('sustainability_metrics')
-          .where('date',
-              isGreaterThanOrEqualTo: startDate.toIso8601String().split('T')[0])
-          .where('date',
-              isLessThanOrEqualTo: now.toIso8601String().split('T')[0])
-          .orderBy('date', descending: false)
-          .get();
+      final querySnapshot =
+          await FirebaseFirestore.instance
+              .collection('sustainability_metrics')
+              .where(
+                'date',
+                isGreaterThanOrEqualTo:
+                    startDate.toIso8601String().split('T')[0],
+              )
+              .where(
+                'date',
+                isLessThanOrEqualTo: now.toIso8601String().split('T')[0],
+              )
+              .orderBy('date', descending: false)
+              .get();
 
       List<Map<String, dynamic>> data = [];
       for (var doc in querySnapshot.docs) {
@@ -257,14 +265,20 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
       }
 
       // Using Firestore to fetch food tracking data
-      final foodTrackingSnapshot = await FirebaseFirestore.instance
-          .collection('food_tracking')
-          .where('establishmentId', isEqualTo: user.uid)
-          .where('date',
-              isGreaterThanOrEqualTo: startDate.toIso8601String().split('T')[0])
-          .where('date',
-              isLessThanOrEqualTo: now.toIso8601String().split('T')[0])
-          .get();
+      final foodTrackingSnapshot =
+          await FirebaseFirestore.instance
+              .collection('food_tracking')
+              .where('establishmentId', isEqualTo: user.uid)
+              .where(
+                'date',
+                isGreaterThanOrEqualTo:
+                    startDate.toIso8601String().split('T')[0],
+              )
+              .where(
+                'date',
+                isLessThanOrEqualTo: now.toIso8601String().split('T')[0],
+              )
+              .get();
 
       Map<String, List<Map<String, dynamic>>> historicalFoodData = {};
       for (var doc in foodTrackingSnapshot.docs) {
@@ -282,23 +296,30 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
       }
 
       // Using Firestore to fetch donation data
-      final donationSnapshot = await FirebaseFirestore.instance
-          .collection('donation')
-          .where('establishmentId', isEqualTo: user.uid)
-          .where('createdAt',
-              isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
-          .get();
+      final donationSnapshot =
+          await FirebaseFirestore.instance
+              .collection('donation')
+              .where('establishmentId', isEqualTo: user.uid)
+              .where(
+                'createdAt',
+                isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
+              )
+              .get();
 
-      List<Map<String, dynamic>> historicalDonationData = donationSnapshot.docs
-          .map((doc) => {
-                'item_name': doc['item_name'],
-                'quantity': doc['quantity']?.toInt() ?? 0,
-                'createdAt': doc['createdAt'].toDate().toIso8601String(),
-                'status': doc['status'],
-              })
-          .toList();
+      List<Map<String, dynamic>> historicalDonationData =
+          donationSnapshot.docs
+              .map(
+                (doc) => {
+                  'item_name': doc['item_name'],
+                  'quantity': doc['quantity']?.toInt() ?? 0,
+                  'createdAt': doc['createdAt'].toDate().toIso8601String(),
+                  'status': doc['status'],
+                },
+              )
+              .toList();
 
-      final yesterday = now.subtract(Duration(days: 1)).toIso8601String().split('T')[0];
+      final yesterday =
+          now.subtract(Duration(days: 1)).toIso8601String().split('T')[0];
       final yesterdayData = historicalFoodData[yesterday] ?? [];
       Map<String, dynamic> yesterdayProduction = {
         for (var item in yesterdayData)
@@ -306,27 +327,31 @@ class _EstablishmentDashboardState extends State<EstablishmentDashboard>
             'quantity_made': item['quantity_made'],
             'quantity_sold': item['quantity_sold'],
             'quantity_surplus': item['quantity_surplus'],
-          }
+          },
       };
 
       // Using Firestore to fetch surplus count
-      final surplusSnapshot = await FirebaseFirestore.instance
-          .collection('food_tracking')
-          .where('establishmentId', isEqualTo: user.uid)
-          .where('quantity_surplus', isGreaterThan: 0)
-          .get();
+      final surplusSnapshot =
+          await FirebaseFirestore.instance
+              .collection('food_tracking')
+              .where('establishmentId', isEqualTo: user.uid)
+              .where('quantity_surplus', isGreaterThan: 0)
+              .get();
       final surplusCount = surplusSnapshot.docs.length;
 
       // Using Firestore to fetch establishment details
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+      final userDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
       final establishmentType = userDoc.data()?['type'] ?? 'Restaurant';
       final establishmentAddress = userDoc.data()?['address'] ?? 'Unknown';
 
       debugPrint('Historical Food Data: ${jsonEncode(historicalFoodData)}');
-      debugPrint('Historical Donation Data: ${jsonEncode(historicalDonationData)}');
+      debugPrint(
+        'Historical Donation Data: ${jsonEncode(historicalDonationData)}',
+      );
       debugPrint('Yesterday Data: ${jsonEncode(yesterdayProduction)}');
       debugPrint('Surplus Count: $surplusCount');
 
@@ -408,13 +433,15 @@ Example insights:
 ''';
 
       // Using Gemini API for insights
-      const apiKey = 'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ'; // TODO: Replace with actual key
+      const apiKey =
+          'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ'; // TODO: Replace with actual key
       if (apiKey.isEmpty || apiKey == 'YOUR_VALID_GEMINI_API_KEY') {
         throw Exception('Gemini API key not configured');
       }
 
       final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey');
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
+      );
       final response = await http
           .post(
             url,
@@ -423,50 +450,55 @@ Example insights:
               'contents': [
                 {
                   'parts': [
-                    {'text': prompt}
-                  ]
-                }
+                    {'text': prompt},
+                  ],
+                },
               ],
-              'generationConfig': {
-                'temperature': 0.9,
-                'maxOutputTokens': 200,
-              },
+              'generationConfig': {'temperature': 0.9, 'maxOutputTokens': 200},
             }),
           )
           .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final text = data['candidates']?[0]['content']['parts'][0]['text'] as String?;
+        final text =
+            data['candidates']?[0]['content']['parts'][0]['text'] as String?;
         debugPrint('AI Insights Response: $text');
         if (text == null || text.isEmpty) {
           throw Exception('Empty response from Gemini API');
         }
 
-        final insights = text
-            .split('\n')
-            .where((line) => line.trim().startsWith('- '))
-            .map((line) => line.trim().substring(2))
-            .toList();
+        final insights =
+            text
+                .split('\n')
+                .where((line) => line.trim().startsWith('- '))
+                .map((line) => line.trim().substring(2))
+                .toList();
 
         setState(() {
-          _aiInsights = insights.isNotEmpty
-              ? insights
-              : [
-                  'Optimize inventory based on recent trends.',
-                  'Consider donating surplus to reduce waste.',
-                  'Adjust preparation for high-demand items.',
-                ];
+          _aiInsights =
+              insights.isNotEmpty
+                  ? insights
+                  : [
+                    'Optimize inventory based on recent trends.',
+                    'Consider donating surplus to reduce waste.',
+                    'Adjust preparation for high-demand items.',
+                  ];
           _isFetchingInsights = false;
         });
       } else {
-        debugPrint('Gemini API error: Status ${response.statusCode}, Body: ${response.body}');
+        debugPrint(
+          'Gemini API error: Status ${response.statusCode}, Body: ${response.body}',
+        );
         throw HttpException(
-            'Gemini API returned status code ${response.statusCode}: ${response.body}');
+          'Gemini API returned status code ${response.statusCode}: ${response.body}',
+        );
       }
     } on TimeoutException catch (e) {
       debugPrint('Gemini API timed out: $e');
-      _showErrorSnackBar('AI insights request timed out. Using default insights.');
+      _showErrorSnackBar(
+        'AI insights request timed out. Using default insights.',
+      );
       setState(() {
         _aiInsights = [
           'Optimize inventory based on recent trends.',
@@ -513,13 +545,18 @@ Example insights:
     }
   }
 
-  Future<void> _fetchPredictions({String? date, bool forceRefresh = false}) async {
+  Future<void> _fetchPredictions({
+    String? date,
+    bool forceRefresh = false,
+  }) async {
     if (_retryCount >= _maxRetries) {
       setState(() {
-        _predictionsError = 'Max retries reached. Using cached or fallback data.';
+        _predictionsError =
+            'Max retries reached. Using cached or fallback data.';
         _isPredictionsLoading = false;
         _isOffline = true;
-        _predictions = _lastSuccessfulPredictions ?? Constants.defaultPredictions;
+        _predictions =
+            _lastSuccessfulPredictions ?? Constants.defaultPredictions;
       });
       _fetchAIInsights();
       return;
@@ -533,7 +570,8 @@ Example insights:
 
     final now = DateTime.now();
     final targetDate = date ?? now.toIso8601String().split('T')[0];
-    final yesterday = now.subtract(Duration(days: 1)).toIso8601String().split('T')[0];
+    final yesterday =
+        now.subtract(Duration(days: 1)).toIso8601String().split('T')[0];
     final dateFormatter = DateFormat('MMMM d, yyyy');
     final dayFormatter = DateFormat('EEEE');
     final todayDate = dateFormatter.format(now);
@@ -543,7 +581,9 @@ Example insights:
     final cachedDate = prefs.getString('predictions_date_$targetDate');
     final cachedPredictions = prefs.getString('predictions_data_$targetDate');
 
-    if (!_forceRefresh && cachedDate == targetDate && cachedPredictions != null) {
+    if (!_forceRefresh &&
+        cachedDate == targetDate &&
+        cachedPredictions != null) {
       setState(() {
         _predictions = Map<String, int>.from(jsonDecode(cachedPredictions));
         _isPredictionsLoading = false;
@@ -602,13 +642,15 @@ Example output:
 ''';
 
       // Using Gemini API for predictions
-      const apiKey = 'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ'; // TODO: Replace with actual key
+      const apiKey =
+          'AIzaSyCVCLMbR7-9F_jI3Byk_0az0nDFOPerPmQ'; // TODO: Replace with actual key
       if (apiKey.isEmpty || apiKey == 'YOUR_VALID_GEMINI_API_KEY') {
         throw Exception('Gemini API key not configured');
       }
 
       final url = Uri.parse(
-          'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey');
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
+      );
       final response = await http
           .post(
             url,
@@ -617,21 +659,19 @@ Example output:
               'contents': [
                 {
                   'parts': [
-                    {'text': prompt}
-                  ]
-                }
+                    {'text': prompt},
+                  ],
+                },
               ],
-              'generationConfig': {
-                'temperature': 0.9,
-                'maxOutputTokens': 200,
-              },
+              'generationConfig': {'temperature': 0.9, 'maxOutputTokens': 200},
             }),
           )
           .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final text = data['candidates']?[0]['content']['parts'][0]['text'] as String?;
+        final text =
+            data['candidates']?[0]['content']['parts'][0]['text'] as String?;
         debugPrint('Predictions Response: $text');
         if (text == null || text.isEmpty) {
           throw Exception('Empty response from Gemini API');
@@ -639,18 +679,28 @@ Example output:
 
         Map<String, dynamic> predictions;
         try {
-          predictions = jsonDecode(text.replaceAll('```json', '').replaceAll('```', '')) as Map<String, dynamic>;
+          predictions =
+              jsonDecode(text.replaceAll('```json', '').replaceAll('```', ''))
+                  as Map<String, dynamic>;
         } catch (e) {
           debugPrint('Failed to parse Gemini response: $e, Raw: $text');
           throw Exception('Failed to parse Gemini response: $e');
         }
 
         await prefs.setString('predictions_date_$targetDate', targetDate);
-        await prefs.setString('predictions_data_$targetDate', jsonEncode(predictions));
-        await prefs.setString('last_successful_predictions', jsonEncode(predictions));
+        await prefs.setString(
+          'predictions_data_$targetDate',
+          jsonEncode(predictions),
+        );
+        await prefs.setString(
+          'last_successful_predictions',
+          jsonEncode(predictions),
+        );
 
         setState(() {
-          _predictions = predictions.map((key, value) => MapEntry(key, value as int));
+          _predictions = predictions.map(
+            (key, value) => MapEntry(key, value as int),
+          );
           _lastSuccessfulPredictions = _predictions;
           _isPredictionsLoading = false;
           _isOffline = false;
@@ -661,10 +711,12 @@ Example output:
         if (date == null) {
           final yesterdayData = await _fetchHistoricalData();
           final yesterdayPromptData = {
-            'today_date': dateFormatter.format(now.subtract(Duration(days: 1))) +
+            'today_date':
+                dateFormatter.format(now.subtract(Duration(days: 1))) +
                 ' (${dayFormatter.format(now.subtract(Duration(days: 1)))})',
             'historical_food_data': yesterdayData['historical_food_data'],
-            'historical_donation_data': yesterdayData['historical_donation_data'],
+            'historical_donation_data':
+                yesterdayData['historical_donation_data'],
             'surplus_count': yesterdayData['surplus_count'],
             'yesterday_data': yesterdayData['yesterday_data'],
             'establishment_type': yesterdayData['establishment_type'],
@@ -703,9 +755,9 @@ Example output:
                   'contents': [
                     {
                       'parts': [
-                        {'text': yesterdayPrompt}
-                      ]
-                    }
+                        {'text': yesterdayPrompt},
+                      ],
+                    },
                   ],
                   'generationConfig': {
                     'temperature': 0.9,
@@ -718,7 +770,8 @@ Example output:
           if (yesterdayResponse.statusCode == 200) {
             final yesterdayData = jsonDecode(yesterdayResponse.body);
             final yesterdayText =
-                yesterdayData['candidates']?[0]['content']['parts'][0]['text'] as String?;
+                yesterdayData['candidates']?[0]['content']['parts'][0]['text']
+                    as String?;
             debugPrint('Yesterday Predictions Response: $yesterdayText');
             if (yesterdayText == null || yesterdayText.isEmpty) {
               throw Exception('Empty yesterday predictions response');
@@ -726,36 +779,53 @@ Example output:
 
             Map<String, dynamic> yesterdayPredictions;
             try {
-              yesterdayPredictions = jsonDecode(
-                  yesterdayText.replaceAll('```json', '').replaceAll('```', '')) as Map<String, dynamic>;
+              yesterdayPredictions =
+                  jsonDecode(
+                        yesterdayText
+                            .replaceAll('```json', '')
+                            .replaceAll('```', ''),
+                      )
+                      as Map<String, dynamic>;
             } catch (e) {
-              debugPrint('Failed to parse yesterday predictions: $e, Raw: $yesterdayText');
+              debugPrint(
+                'Failed to parse yesterday predictions: $e, Raw: $yesterdayText',
+              );
               throw Exception('Failed to parse yesterday predictions: $e');
             }
 
             await prefs.setString('predictions_date_$yesterday', yesterday);
-            await prefs.setString('predictions_data_$yesterday', jsonEncode(yesterdayPredictions));
+            await prefs.setString(
+              'predictions_data_$yesterday',
+              jsonEncode(yesterdayPredictions),
+            );
 
             setState(() {
-              _yesterdayPredictions =
-                  yesterdayPredictions.map((key, value) => MapEntry(key, value as int));
+              _yesterdayPredictions = yesterdayPredictions.map(
+                (key, value) => MapEntry(key, value as int),
+              );
             });
             _fetchAIInsights();
           } else {
-            debugPrint('Yesterday API error: Status ${yesterdayResponse.statusCode}, Body: ${yesterdayResponse.body}');
+            debugPrint(
+              'Yesterday API error: Status ${yesterdayResponse.statusCode}, Body: ${yesterdayResponse.body}',
+            );
             throw HttpException(
-                'Yesterday API returned status code ${yesterdayResponse.statusCode}: ${yesterdayResponse.body}');
+              'Yesterday API returned status code ${yesterdayResponse.statusCode}: ${yesterdayResponse.body}',
+            );
           }
 
-          final nextDay = now.add(Duration(days: 1)).toIso8601String().split('T')[0];
+          final nextDay =
+              now.add(Duration(days: 1)).toIso8601String().split('T')[0];
           final lastPreload = prefs.getString('last_preload_time');
           if (lastPreload == null ||
               now.difference(DateTime.parse(lastPreload)).inHours >= 24) {
             final nextDayPromptData = {
-              'today_date': dateFormatter.format(now.add(Duration(days: 1))) +
+              'today_date':
+                  dateFormatter.format(now.add(Duration(days: 1))) +
                   ' (${dayFormatter.format(now.add(Duration(days: 1)))})',
               'historical_food_data': historicalData['historical_food_data'],
-              'historical_donation_data': historicalData['historical_donation_data'],
+              'historical_donation_data':
+                  historicalData['historical_donation_data'],
               'surplus_count': historicalData['surplus_count'],
               'yesterday_data': historicalData['yesterday_data'],
               'establishment_type': historicalData['establishment_type'],
@@ -794,9 +864,9 @@ Example output:
                     'contents': [
                       {
                         'parts': [
-                          {'text': nextDayPrompt}
-                        ]
-                      }
+                          {'text': nextDayPrompt},
+                        ],
+                      },
                     ],
                     'generationConfig': {
                       'temperature': 0.9,
@@ -805,33 +875,49 @@ Example output:
                   }),
                 )
                 .then((response) {
-              if (response.statusCode == 200) {
-                final data = jsonDecode(response.body);
-                final text =
-                    data['candidates']?[0]['content']['parts'][0]['text'] as String?;
-                debugPrint('Next Day Predictions Response: $text');
-                if (text != null && text.isNotEmpty) {
-                  final nextDayPredictions = jsonDecode(
-                      text.replaceAll('```json', '').replaceAll('```', '')) as Map<String, dynamic>;
-                  prefs.setString('predictions_date_$nextDay', nextDay);
-                  prefs.setString('predictions_data_$nextDay', jsonEncode(nextDayPredictions));
-                  prefs.setString('last_preload_time', now.toIso8601String());
-                  debugPrint('Preloaded predictions for $nextDay');
-                }
-              }
-            });
+                  if (response.statusCode == 200) {
+                    final data = jsonDecode(response.body);
+                    final text =
+                        data['candidates']?[0]['content']['parts'][0]['text']
+                            as String?;
+                    debugPrint('Next Day Predictions Response: $text');
+                    if (text != null && text.isNotEmpty) {
+                      final nextDayPredictions =
+                          jsonDecode(
+                                text
+                                    .replaceAll('```json', '')
+                                    .replaceAll('```', ''),
+                              )
+                              as Map<String, dynamic>;
+                      prefs.setString('predictions_date_$nextDay', nextDay);
+                      prefs.setString(
+                        'predictions_data_$nextDay',
+                        jsonEncode(nextDayPredictions),
+                      );
+                      prefs.setString(
+                        'last_preload_time',
+                        now.toIso8601String(),
+                      );
+                      debugPrint('Preloaded predictions for $nextDay');
+                    }
+                  }
+                });
           }
         }
       } else {
-        debugPrint('Gemini API error: Status ${response.statusCode}, Body: ${response.body}');
+        debugPrint(
+          'Gemini API error: Status ${response.statusCode}, Body: ${response.body}',
+        );
         throw HttpException(
-            'Gemini API returned status code ${response.statusCode}: ${response.body}');
+          'Gemini API returned status code ${response.statusCode}: ${response.body}',
+        );
       }
     } catch (e) {
       debugPrint('Error fetching predictions: $e');
       _showErrorSnackBar('Failed to fetch predictions: $e');
       setState(() {
-        _predictions = _lastSuccessfulPredictions ?? Constants.defaultPredictions;
+        _predictions =
+            _lastSuccessfulPredictions ?? Constants.defaultPredictions;
         _predictionsError = 'Failed to fetch predictions: $e';
         _isPredictionsLoading = false;
         _isOffline = e is SocketException;
@@ -846,10 +932,7 @@ Example output:
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.inter(
-            color: Constants.textColor,
-            fontSize: 14,
-          ),
+          style: GoogleFonts.inter(color: Constants.textColor, fontSize: 14),
           overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: Constants.errorColor,
@@ -866,10 +949,7 @@ Example output:
       SnackBar(
         content: Text(
           message,
-          style: GoogleFonts.inter(
-            color: Constants.textColor,
-            fontSize: 14,
-          ),
+          style: GoogleFonts.inter(color: Constants.textColor, fontSize: 14),
           overflow: TextOverflow.ellipsis,
         ),
         backgroundColor: Constants.primaryColor,
@@ -884,359 +964,389 @@ Example output:
   void _showPredictionsDialog() {
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Stack(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    const Color(0xFF2D2D2D),
-                    Constants.backgroundColor.withOpacity(0.9),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    offset: const Offset(4, 4),
-                  ),
-                  BoxShadow(
-                    color: Constants.textColor.withOpacity(0.03),
-                    blurRadius: 8,
-                    offset: const Offset(-4, -4),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          Constants.primaryColor.withOpacity(0.3),
-                          Constants.backgroundColor.withOpacity(0.5),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
+      builder:
+          (context) => Dialog(
+            backgroundColor: Colors.transparent,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Stack(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF2D2D2D),
+                        Constants.backgroundColor.withOpacity(0.9),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Today\'s AI Predictions',
-                            style: GoogleFonts.inter(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w700,
-                              color: Constants.textColor,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(4, 4),
+                      ),
+                      BoxShadow(
+                        color: Constants.textColor.withOpacity(0.03),
+                        blurRadius: 8,
+                        offset: const Offset(-4, -4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
                         ),
-                        Row(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Constants.primaryColor.withOpacity(0.3),
+                              Constants.backgroundColor.withOpacity(0.5),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            if (_isOffline)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8),
-                                child: Icon(
-                                  Icons.cloud_off,
-                                  color: Constants.secondaryTextColor,
-                                  size: 24,
+                            Expanded(
+                              child: Text(
+                                'Today\'s AI Predictions',
+                                style: GoogleFonts.inter(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w700,
+                                  color: Constants.textColor,
                                 ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.refresh,
-                                color: Constants.primaryColor,
-                                size: 24,
-                              ),
-                              onPressed: _isPredictionsLoading
-                                  ? null
-                                  : () async {
-                                      final now = DateTime.now();
-                                      final targetDate = now.toIso8601String().split('T')[0];
-                                      await _clearCacheForDate(targetDate);
-                                      _fetchPredictions(forceRefresh: true);
-                                    },
                             ),
-                            IconButton(
-                              icon: Icon(
-                                Icons.close,
-                                color: Constants.textColor,
-                                size: 24,
-                              ),
-                              onPressed: () => Navigator.pop(context),
+                            Row(
+                              children: [
+                                if (_isOffline)
+                                  Padding(
+                                    padding: const EdgeInsets.only(right: 8),
+                                    child: Icon(
+                                      Icons.cloud_off,
+                                      color: Constants.secondaryTextColor,
+                                      size: 24,
+                                    ),
+                                  ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.refresh,
+                                    color: Constants.primaryColor,
+                                    size: 24,
+                                  ),
+                                  onPressed:
+                                      _isPredictionsLoading
+                                          ? null
+                                          : () async {
+                                            final now = DateTime.now();
+                                            final targetDate =
+                                                now.toIso8601String().split(
+                                                  'T',
+                                                )[0];
+                                            await _clearCacheForDate(
+                                              targetDate,
+                                            );
+                                            _fetchPredictions(
+                                              forceRefresh: true,
+                                            );
+                                          },
+                                ),
+                                IconButton(
+                                  icon: Icon(
+                                    Icons.close,
+                                    color: Constants.textColor,
+                                    size: 24,
+                                  ),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (_isPredictionsLoading)
-                    Column(
-                      children: [
-                        Center(
-                          child: SizedBox(
-                            width: 36,
-                            height: 36,
-                            child: CircularProgressIndicator(
-                              color: Constants.primaryColor,
-                              strokeWidth: 2.5,
+                      ),
+                      const SizedBox(height: 16),
+                      if (_isPredictionsLoading)
+                        Column(
+                          children: [
+                            Center(
+                              child: SizedBox(
+                                width: 36,
+                                height: 36,
+                                child: CircularProgressIndicator(
+                                  color: Constants.primaryColor,
+                                  strokeWidth: 2.5,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Fetching predictions... This may take up to 30 seconds.',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: Constants.secondaryTextColor,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        )
+                      else if (_predictionsError != null)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Constants.errorColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Constants.errorColor.withOpacity(0.4),
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Fetching predictions... This may take up to 30 seconds.',
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: Constants.secondaryTextColor,
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Constants.errorColor,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      _predictionsError!,
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: Constants.textColor,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'The API may take up to 30 seconds to respond.',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: Constants.secondaryTextColor,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    )
-                  else if (_predictionsError != null)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Constants.errorColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: Constants.errorColor.withOpacity(0.4),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
+                        )
+                      else if (_predictions == null || _predictions!.isEmpty)
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2D2D2D).withOpacity(0.7),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
                             children: [
                               Icon(
-                                Icons.error_outline,
-                                color: Constants.errorColor,
+                                Icons.info_outline,
+                                color: Constants.secondaryTextColor,
                                 size: 24,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Text(
-                                  _predictionsError!,
+                                  'No predictions available for today.',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w500,
-                                    color: Constants.textColor,
+                                    color: Constants.secondaryTextColor,
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'The API may take up to 30 seconds to respond.',
-                            style: GoogleFonts.inter(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: Constants.secondaryTextColor,
-                            ),
-                            textAlign: TextAlign.center,
+                        )
+                      else
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.of(context).size.height * 0.4,
                           ),
-                        ],
-                      ),
-                    )
-                  else if (_predictions == null || _predictions!.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2D2D2D).withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.info_outline,
-                            color: Constants.secondaryTextColor,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'No predictions available for today.',
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Constants.secondaryTextColor,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  else
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.4,
-                      ),
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: _predictions!.length,
-                        itemBuilder: (context, index) {
-                          final dish = _predictions!.keys.elementAt(index);
-                          final quantity = _predictions![dish]!;
-                          final yesterdayQuantity = _yesterdayPredictions != null &&
-                                  _yesterdayPredictions!.containsKey(dish)
-                              ? _yesterdayPredictions![dish]!
-                              : null;
-                          IconData? trendIcon;
-                          Color? trendColor;
-                          if (yesterdayQuantity != null) {
-                            if (quantity > yesterdayQuantity) {
-                              trendIcon = Icons.trending_up;
-                              trendColor = Constants.primaryColor;
-                            } else if (quantity < yesterdayQuantity) {
-                              trendIcon = Icons.trending_down;
-                              trendColor = Constants.errorColor;
-                            } else {
-                              trendIcon = Icons.trending_flat;
-                              trendColor = Constants.secondaryTextColor;
-                            }
-                          }
+                          child: ListView.builder(
+                            shrinkWrap: true,
+                            itemCount: _predictions!.length,
+                            itemBuilder: (context, index) {
+                              final dish = _predictions!.keys.elementAt(index);
+                              final quantity = _predictions![dish]!;
+                              final yesterdayQuantity =
+                                  _yesterdayPredictions != null &&
+                                          _yesterdayPredictions!.containsKey(
+                                            dish,
+                                          )
+                                      ? _yesterdayPredictions![dish]!
+                                      : null;
+                              IconData? trendIcon;
+                              Color? trendColor;
+                              if (yesterdayQuantity != null) {
+                                if (quantity > yesterdayQuantity) {
+                                  trendIcon = Icons.trending_up;
+                                  trendColor = Constants.primaryColor;
+                                } else if (quantity < yesterdayQuantity) {
+                                  trendIcon = Icons.trending_down;
+                                  trendColor = Constants.errorColor;
+                                } else {
+                                  trendIcon = Icons.trending_flat;
+                                  trendColor = Constants.secondaryTextColor;
+                                }
+                              }
 
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 400),
-                            curve: Curves.easeOut,
-                            margin: const EdgeInsets.only(bottom: 16),
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFF2D2D2D).withOpacity(0.9),
-                                  Constants.backgroundColor.withOpacity(0.8),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                                BoxShadow(
-                                  color: Constants.primaryColor.withOpacity(0.05),
-                                  blurRadius: 8,
-                                  spreadRadius: 1,
-                                ),
-                              ],
-                              border: Border.all(
-                                color: Constants.primaryColor.withOpacity(0.2),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: Constants.primaryColor.withOpacity(0.2),
-                                    shape: BoxShape.circle,
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 400),
+                                curve: Curves.easeOut,
+                                margin: const EdgeInsets.only(bottom: 16),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      const Color(0xFF2D2D2D).withOpacity(0.9),
+                                      Constants.backgroundColor.withOpacity(
+                                        0.8,
+                                      ),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
                                   ),
-                                  child: Icon(
-                                    Icons.restaurant_menu,
-                                    color: Constants.primaryColor,
-                                    size: 24,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                    BoxShadow(
+                                      color: Constants.primaryColor.withOpacity(
+                                        0.05,
+                                      ),
+                                      blurRadius: 8,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                  border: Border.all(
+                                    color: Constants.primaryColor.withOpacity(
+                                      0.2,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Constants.primaryColor
+                                            .withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(
+                                        Icons.restaurant_menu,
+                                        color: Constants.primaryColor,
+                                        size: 24,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          Expanded(
-                                            child: Text(
-                                              dish,
-                                              style: GoogleFonts.inter(
-                                                fontSize: 16,
-                                                fontWeight: FontWeight.w600,
-                                                color: Constants.textColor,
+                                          Row(
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  dish,
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Constants.textColor,
+                                                  ),
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
                                               ),
-                                              overflow: TextOverflow.ellipsis,
+                                              if (trendIcon != null)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                        left: 8,
+                                                      ),
+                                                  child: Icon(
+                                                    trendIcon,
+                                                    color: trendColor,
+                                                    size: 20,
+                                                  ),
+                                                ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Predicted: $quantity ${quantity == 1 ? 'item' : 'items'}',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w400,
+                                              color:
+                                                  Constants.secondaryTextColor,
                                             ),
                                           ),
-                                          if (trendIcon != null)
-                                            Padding(
-                                              padding: const EdgeInsets.only(left: 8),
-                                              child: Icon(
-                                                trendIcon,
-                                                color: trendColor,
-                                                size: 20,
+                                          if (yesterdayQuantity != null)
+                                            Text(
+                                              'Yesterday: $yesterdayQuantity ${yesterdayQuantity == 1 ? 'item' : 'items'}',
+                                              style: GoogleFonts.inter(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w400,
+                                                color:
+                                                    Constants
+                                                        .secondaryTextColor,
                                               ),
                                             ),
                                         ],
                                       ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        'Predicted: $quantity ${quantity == 1 ? 'item' : 'items'}',
-                                        style: GoogleFonts.inter(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w400,
-                                          color: Constants.secondaryTextColor,
-                                        ),
-                                      ),
-                                      if (yesterdayQuantity != null)
-                                        Text(
-                                          'Yesterday: $yesterdayQuantity ${yesterdayQuantity == 1 ? 'item' : 'items'}',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w400,
-                                            color: Constants.secondaryTextColor,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          );
-                        },
+                              );
+                            },
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: AnimatedContainer(
+                      duration: const Duration(seconds: 5),
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment.topLeft,
+                          radius: 2,
+                          colors: [
+                            Constants.primaryColor.withOpacity(0.05),
+                            Colors.transparent,
+                          ],
+                        ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-            Positioned.fill(
-              child: IgnorePointer(
-                child: AnimatedContainer(
-                  duration: const Duration(seconds: 5),
-                  decoration: BoxDecoration(
-                    gradient: RadialGradient(
-                      center: Alignment.topLeft,
-                      radius: 2,
-                      colors: [
-                        Constants.primaryColor.withOpacity(0.05),
-                        Colors.transparent,
-                      ],
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
     );
   }
 
@@ -1320,32 +1430,33 @@ Example output:
             else
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: _aiInsights.map((insight) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '• ',
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: Constants.textColor,
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            insight,
-                            style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: Constants.textColor,
+                children:
+                    _aiInsights.map((insight) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '• ',
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: Constants.textColor,
+                              ),
                             ),
-                          ),
+                            Expanded(
+                              child: Text(
+                                insight,
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: Constants.textColor,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  );
-                }).toList(),
+                      );
+                    }).toList(),
               ),
             const SizedBox(height: 8),
             Text(
@@ -1401,26 +1512,32 @@ Example output:
       );
     }
 
-    final mealsDonatedData = _sustainabilityData.asMap().entries.map((entry) {
-      return BarChartGroupData(
-        x: entry.key,
-        barRods: [
-          BarChartRodData(
-            toY: entry.value['meals_donated'],
-            color: Constants.primaryColor,
-          ),
-        ],
-      );
-    }).toList();
+    final mealsDonatedData =
+        _sustainabilityData.asMap().entries.map((entry) {
+          return BarChartGroupData(
+            x: entry.key,
+            barRods: [
+              BarChartRodData(
+                toY: entry.value['meals_donated'],
+                color: Constants.primaryColor,
+              ),
+            ],
+          );
+        }).toList();
 
-    final foodSavedData = _sustainabilityData.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), entry.value['food_saved_kg']);
-    }).toList();
+    final foodSavedData =
+        _sustainabilityData.asMap().entries.map((entry) {
+          return FlSpot(entry.key.toDouble(), entry.value['food_saved_kg']);
+        }).toList();
 
     final totalWasteReduced = _sustainabilityData.fold<double>(
-        0, (sum, item) => sum + item['waste_reduced_kg']);
+      0,
+      (sum, item) => sum + item['waste_reduced_kg'],
+    );
     final totalAIWasteReduced = _sustainabilityData.fold<double>(
-        0, (sum, item) => sum + item['ai_optimized_waste_reduced_kg']);
+      0,
+      (sum, item) => sum + item['ai_optimized_waste_reduced_kg'],
+    );
     final standardWasteReduced = totalWasteReduced - totalAIWasteReduced;
 
     return Container(
@@ -1483,9 +1600,12 @@ Example output:
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
                             final index = value.toInt();
-                            if (index >= 0 && index < _sustainabilityData.length) {
+                            if (index >= 0 &&
+                                index < _sustainabilityData.length) {
                               final date =
-                                  _sustainabilityData[index]['date'].split('-').last;
+                                  _sustainabilityData[index]['date']
+                                      .split('-')
+                                      .last;
                               return SideTitleWidget(
                                 child: Text(
                                   date,
@@ -1501,11 +1621,15 @@ Example output:
                           },
                         ),
                       ),
-                      leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles:
-                          const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles:
-                          const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
                     borderData: FlBorderData(show: false),
                     barGroups: mealsDonatedData,
@@ -1523,9 +1647,12 @@ Example output:
                           showTitles: true,
                           getTitlesWidget: (value, meta) {
                             final index = value.toInt();
-                            if (index >= 0 && index < _sustainabilityData.length) {
+                            if (index >= 0 &&
+                                index < _sustainabilityData.length) {
                               final date =
-                                  _sustainabilityData[index]['date'].split('-').last;
+                                  _sustainabilityData[index]['date']
+                                      .split('-')
+                                      .last;
                               return SideTitleWidget(
                                 meta: meta,
                                 child: Text(
@@ -1541,12 +1668,15 @@ Example output:
                           },
                         ),
                       ),
-                      leftTitles:
-                          const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      topTitles:
-                          const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles:
-                          const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                      leftTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
                     borderData: FlBorderData(show: false),
                     lineBarsData: [
@@ -1623,7 +1753,7 @@ Example output:
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
-          SizedBox(height: 120, child: chart),
+          SizedBox(height: 105, child: chart),
         ],
       ),
     );
@@ -1641,7 +1771,11 @@ Example output:
         ),
         child: Row(
           children: [
-            Icon(Icons.info_outline, color: Constants.secondaryTextColor, size: 20),
+            Icon(
+              Icons.info_outline,
+              color: Constants.secondaryTextColor,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -1697,11 +1831,12 @@ Example output:
           ),
           const SizedBox(height: 4),
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('food_tracking')
-                .where('establishmentId', isEqualTo: user.uid)
-                .where('quantity_surplus', isGreaterThan: 0)
-                .snapshots(),
+            stream:
+                FirebaseFirestore.instance
+                    .collection('food_tracking')
+                    .where('establishmentId', isEqualTo: user.uid)
+                    .where('quantity_surplus', isGreaterThan: 0)
+                    .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return Center(
@@ -1911,8 +2046,9 @@ Example output:
     String? topPrediction;
     int? topQuantity;
     if (_predictions != null && _predictions!.isNotEmpty) {
-      final sortedPredictions = _predictions!.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
+      final sortedPredictions =
+          _predictions!.entries.toList()
+            ..sort((a, b) => b.value.compareTo(a.value));
       topPrediction = sortedPredictions.first.key;
       topQuantity = sortedPredictions.first.value;
     }
@@ -1935,165 +2071,168 @@ Example output:
           ),
           _isLoading
               ? Center(
-                  child: CircularProgressIndicator(color: Constants.primaryColor),
-                )
+                child: CircularProgressIndicator(color: Constants.primaryColor),
+              )
               : SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 32,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildOfflineBanner(),
-                      const SizedBox(height: 32),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ScaleTransition(
-                            scale: _scaleAnimation,
-                            child: Image.asset(
-                              'assets/logo.jpg',
-                              width: 80,
-                              height: 80,
-                              semanticLabel: 'ReNosh Logo',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: Text(
-                          '$_greeting, ${_establishmentName ?? 'Loading...'}!',
-                          style: GoogleFonts.inter(
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            color: Constants.textColor,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Manage your surplus and track sustainability',
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w400,
-                          color: Constants.secondaryTextColor,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildAIInsightsCard(),
-                      const SizedBox(height: 24),
-                      _buildSustainabilityCharts(),
-                      const SizedBox(height: 24),
-                      _buildSurplusItems(),
-                      const SizedBox(height: 24),
-                      MouseRegion(
-                        cursor: SystemMouseCursors.click,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (Platform.isAndroid || Platform.isIOS) {
-                              HapticFeedback.lightImpact();
-                            }
-                            _showPredictionsDialog();
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 28,
-                              vertical: 18,
-                            ),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Constants.primaryColor.withOpacity(0.9),
-                                  Constants.backgroundColor.withOpacity(0.8),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color:
-                                      Constants.primaryColor.withOpacity(_glowAnimation.value),
-                                  blurRadius: 12,
-                                  spreadRadius: 2,
-                                ),
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                              border: Border.all(
-                                color: Constants.primaryColor.withOpacity(0.5),
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.insights,
-                                      color: Constants.textColor,
-                                      size: 24,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      'Predictions of the Day',
-                                      style: GoogleFonts.inter(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w700,
-                                        color: Constants.textColor,
-                                      ),
-                                    ),
-                                    if (_isPredictionsLoading) ...[
-                                      const SizedBox(width: 12),
-                                      SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          color: Constants.textColor,
-                                          strokeWidth: 2,
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                if (_isPredictionsLoading)
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 8),
-                                    height: 16,
-                                    width: 150,
-                                    decoration: BoxDecoration(
-                                      color: Constants.secondaryTextColor.withOpacity(0.3),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  )
-                                else if (topPrediction != null && topQuantity != null) ...[
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Top: $topPrediction ($topQuantity items)',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w400,
-                                      color: Constants.secondaryTextColor,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 32,
                 ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildOfflineBanner(),
+                    const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ScaleTransition(
+                          scale: _scaleAnimation,
+                          child: Image.asset(
+                            'assets/logo.jpg',
+                            width: 80,
+                            height: 80,
+                            semanticLabel: 'ReNosh Logo',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    FadeTransition(
+                      opacity: _fadeAnimation,
+                      child: Text(
+                        '$_greeting, ${_establishmentName ?? 'Loading...'}!',
+                        style: GoogleFonts.inter(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: Constants.textColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Manage your surplus and track sustainability',
+                      style: GoogleFonts.inter(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w400,
+                        color: Constants.secondaryTextColor,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildAIInsightsCard(),
+                    const SizedBox(height: 24),
+                    _buildSustainabilityCharts(),
+                    const SizedBox(height: 24),
+                    _buildSurplusItems(),
+                    const SizedBox(height: 24),
+                    MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: GestureDetector(
+                        onTap: () {
+                          if (Platform.isAndroid || Platform.isIOS) {
+                            HapticFeedback.lightImpact();
+                          }
+                          _showPredictionsDialog();
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 28,
+                            vertical: 18,
+                          ),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Constants.primaryColor.withOpacity(0.9),
+                                Constants.backgroundColor.withOpacity(0.8),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Constants.primaryColor.withOpacity(
+                                  _glowAnimation.value,
+                                ),
+                                blurRadius: 12,
+                                spreadRadius: 2,
+                              ),
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                            border: Border.all(
+                              color: Constants.primaryColor.withOpacity(0.5),
+                            ),
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.insights,
+                                    color: Constants.textColor,
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Predictions of the Day',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w700,
+                                      color: Constants.textColor,
+                                    ),
+                                  ),
+                                  if (_isPredictionsLoading) ...[
+                                    const SizedBox(width: 12),
+                                    SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        color: Constants.textColor,
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              if (_isPredictionsLoading)
+                                Container(
+                                  margin: const EdgeInsets.only(top: 8),
+                                  height: 16,
+                                  width: 150,
+                                  decoration: BoxDecoration(
+                                    color: Constants.secondaryTextColor
+                                        .withOpacity(0.3),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                )
+                              else if (topPrediction != null &&
+                                  topQuantity != null) ...[
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Top: $topPrediction ($topQuantity items)',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w400,
+                                    color: Constants.secondaryTextColor,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
+              ),
         ],
       ),
     );
