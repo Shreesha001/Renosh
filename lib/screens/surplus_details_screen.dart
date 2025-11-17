@@ -179,7 +179,7 @@ class _SurplusDetailsScreenState extends State<SurplusDetailsScreen>
         content: Text(
           message,
           style: GoogleFonts.inter(
-            fontSize: 12,
+            fontSize: 12, 
             color: const Color(0xFFF9F7F3),
           ),
         ),

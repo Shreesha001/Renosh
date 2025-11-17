@@ -10,7 +10,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:renosh_app/screens/secrets.dart';
+// import 'package:renosh_app/screens/secrets.dart';
 import 'package:renosh_app/screens/surplus_details_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -640,13 +640,13 @@ Example insights:
 - Promote Naan with a weekend combo to boost sales.
 ''';
 
-      var apiKey = geminiApi;
+      var apiKey = "AIzaSyAUOLlfY3S9sQzaIEijYqJscZq6tzv9rnI";
       if (apiKey.isEmpty || apiKey == 'YOUR_VALID_GEMINI_API_KEY') {
         throw Exception('Gemini API key not configured');
       }
 
       final url = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey',
       );
       final response = await http
           .post(
@@ -845,13 +845,13 @@ Example output:
 }
 ''';
 
-      var apiKey = geminiApi;
+      var apiKey = "AIzaSyAUOLlfY3S9sQzaIEijYqJscZq6tzv9rnI";
       if (apiKey.isEmpty || apiKey == 'YOUR_VALID_GEMINI_API_KEY') {
         throw Exception('Gemini API key not configured');
       }
 
       final url = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=$apiKey',
       );
       debugPrint('Fetching predictions from Gemini API: $url');
       final response = await http
