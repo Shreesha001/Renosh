@@ -1,7 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:renosh_app/firebase_options.dart';
+import 'firebase_options.dart';
 import 'package:renosh_app/screens/auth_screen/login_screen.dart';
 import 'package:renosh_app/screens/main_screen_establishment.dart';
 import 'package:renosh_app/screens/main_screen_acceptor.dart';
@@ -35,10 +35,11 @@ class MyApp extends StatelessWidget {
     }
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .snapshots(),
+      stream:
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           debugPrint('Waiting for user document for UID: ${user.uid}');
