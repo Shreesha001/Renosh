@@ -1791,7 +1791,7 @@ Example output:
           const SizedBox(height: 16),
           CarouselSlider(
             options: CarouselOptions(
-              height: 200,
+              height: 240,
               autoPlay: true,
               enlargeCenterPage: true,
               aspectRatio: 2.0,
@@ -1963,6 +1963,8 @@ Example output:
               color: Constants.textColor,
             ),
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 8),
           SizedBox(height: 105, child: chart),
