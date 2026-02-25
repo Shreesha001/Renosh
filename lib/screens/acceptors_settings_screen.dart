@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../services/maps_service.dart';
 
 class AcceptorSettingsScreen extends StatefulWidget {
   const AcceptorSettingsScreen({super.key});
@@ -14,6 +15,8 @@ class AcceptorSettingsScreen extends StatefulWidget {
 
 class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
   double _maxDistanceKm = 50;
+  final TextEditingController _pincodeController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   LatLng? _selectedLocation;
   bool _isLoading = false;
@@ -67,11 +70,9 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
       );
       if (placemarks.isNotEmpty) {
         final placemark = placemarks.first;
-        final address =
-            '${placemark.street}, ${placemark.locality}, '
-            '${placemark.administrativeArea} ${placemark.postalCode}';
+        final pincode = placemark.postalCode ?? '';
         setState(() {
-          _addressController.text = address;
+          _pincodeController.text = pincode;
         });
       }
     } catch (e) {
@@ -79,14 +80,23 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
     }
   }
 
-  Future<void> _setLocationFromAddress() async {
+  Future<void> _setLocationFromAddressAndPincode() async {
+    final pincode = _pincodeController.text.trim();
+    final city = _cityController.text.trim();
     final address = _addressController.text.trim();
-    if (address.isEmpty) {
+
+    if (pincode.isEmpty) {
       setState(() {
-        _errorMessage = 'Please enter an address';
+        _errorMessage = 'Please enter at least a pincode';
       });
       return;
     }
+
+    final query = [
+      address,
+      city,
+      pincode,
+    ].where((s) => s.isNotEmpty).join(', ');
 
     setState(() {
       _isLoading = true;
@@ -94,23 +104,25 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
     });
 
     try {
-      final locations = await locationFromAddress(address);
-      if (locations.isNotEmpty) {
-        final location = locations.first;
+      final location = await MapsService.getLatLngFromAddress(query);
+      if (location != null) {
         setState(() {
-          _selectedLocation = LatLng(location.latitude, location.longitude);
+          _selectedLocation = location;
         });
         debugPrint('Location set: $_selectedLocation');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pincode valid! Location found.')),
+        );
       } else {
         setState(() {
-          _errorMessage = 'Could not find location for the provided address';
+          _errorMessage = 'Could not find location for the provided pincode';
         });
       }
     } catch (e) {
       setState(() {
         _errorMessage = 'Error finding location: $e';
       });
-      debugPrint('Error geocoding address: $e');
+      debugPrint('Error geocoding pincode: $e');
     } finally {
       setState(() {
         _isLoading = false;
@@ -122,9 +134,15 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    if (_selectedLocation == null &&
+        _pincodeController.text.trim().isNotEmpty) {
+      // Auto-fetch if user forgot to click "Set Location"
+      await _setLocationFromAddressAndPincode();
+    }
+
     if (_selectedLocation == null) {
       setState(() {
-        _errorMessage = 'Please set your location';
+        _errorMessage = 'Please set your location or enter a valid Pincode';
       });
       return;
     }
@@ -135,15 +153,13 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
     });
 
     try {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
-        {
-          'maxDistanceKm': _maxDistanceKm,
-          'location': {
-            'latitude': _selectedLocation!.latitude,
-            'longitude': _selectedLocation!.longitude,
-          },
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        'maxDistanceKm': _maxDistanceKm,
+        'location': {
+          'latitude': _selectedLocation!.latitude,
+          'longitude': _selectedLocation!.longitude,
         },
-      );
+      }, SetOptions(merge: true));
       debugPrint(
         'Saved settings: maxDistanceKm=$_maxDistanceKm, location=$_selectedLocation',
       );
@@ -178,6 +194,8 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
 
   @override
   void dispose() {
+    _pincodeController.dispose();
+    _cityController.dispose();
     _addressController.dispose();
     super.dispose();
   }
@@ -243,7 +261,7 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Enter your address to set your location',
+                      'Enter your address details to set your location',
                       style: GoogleFonts.inter(
                         fontSize: 14,
                         fontWeight: FontWeight.w400,
@@ -270,13 +288,13 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                           color: const Color(0xFFF9F7F3),
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Enter your address',
+                          hintText: 'Street Address (Optional)',
                           hintStyle: GoogleFonts.inter(
                             fontSize: 14,
                             color: const Color(0xFFB0B0B0),
                           ),
                           prefixIcon: const Icon(
-                            Icons.location_on,
+                            Icons.home,
                             color: Color(0xFF39FF14),
                           ),
                           border: OutlineInputBorder(
@@ -290,11 +308,103 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2D2D2D),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: TextField(
+                              controller: _cityController,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: const Color(0xFFF9F7F3),
+                              ),
+                              decoration: InputDecoration(
+                                hintText: 'City (Optional)',
+                                hintStyle: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: const Color(0xFFB0B0B0),
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.location_city,
+                                  color: Color(0xFF39FF14),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2D2D2D),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: TextField(
+                              controller: _pincodeController,
+                              style: GoogleFonts.inter(
+                                fontSize: 14,
+                                color: const Color(0xFFF9F7F3),
+                              ),
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                hintText: 'Pincode',
+                                hintStyle: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: const Color(0xFFB0B0B0),
+                                ),
+                                prefixIcon: const Icon(
+                                  Icons.location_on,
+                                  color: Color(0xFF39FF14),
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _setLocationFromAddress,
+                        onPressed:
+                            _isLoading
+                                ? null
+                                : _setLocationFromAddressAndPincode,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF39FF14),
                           foregroundColor: const Color(0xFF1A3C34),

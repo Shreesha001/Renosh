@@ -5,8 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'dart:math';
+import 'dart:async';
 
 import 'package:renosh_app/screens/acceptors_settings_screen.dart';
+import '../services/maps_service.dart';
 
 double calculateDistance(LatLng point1, LatLng point2) {
   const double earthRadius = 6371; // km
@@ -34,6 +36,44 @@ class AcceptorDashboard extends StatefulWidget {
 }
 
 class _AcceptorDashboardState extends State<AcceptorDashboard> {
+  StreamSubscription<QuerySnapshot>? _donationSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _startDonationListener();
+  }
+
+  void _startDonationListener() {
+    // Listen for new donations to show alerts
+    _donationSubscription = FirebaseFirestore.instance
+        .collection('donations')
+        .where('status', whereIn: ['Available', 'available'])
+        .orderBy('createdAt', descending: true)
+        .limit(1)
+        .snapshots()
+        .listen((snapshot) {
+          if (snapshot.docs.isNotEmpty && mounted) {
+            final data = snapshot.docs.first.data();
+            final createdAt = (data['createdAt'] as Timestamp?)?.toDate();
+            if (createdAt != null) {
+              final diff = DateTime.now().difference(createdAt);
+              if (diff.inSeconds > 0 && diff.inSeconds < 30) {
+                _showSnackBar(
+                  'New donation alert: ${data['item_name']} available nearby!',
+                );
+              }
+            }
+          }
+        });
+  }
+
+  @override
+  void dispose() {
+    _donationSubscription?.cancel();
+    super.dispose();
+  }
+
   String _getGreeting() {
     final now = DateTime.now().toUtc().add(
       const Duration(hours: 5, minutes: 30),
@@ -274,6 +314,8 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  const SizedBox(height: 24),
+                  const SizedBox(height: 16),
                   StreamBuilder<DocumentSnapshot>(
                     stream:
                         user != null
@@ -364,40 +406,17 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                         'Acceptor location: $acceptorLocation (lat: ${acceptorLocation?.latitude}, lng: ${acceptorLocation?.longitude}), maxDistanceKm: $maxDistanceKm',
                       );
 
-                      if (acceptorLocation == null ||
-                          acceptorLocation.latitude == 0.0 ||
-                          acceptorLocation.longitude == 0.0) {
-                        debugPrint(
-                          'Invalid or missing acceptor location for user: ${user.uid}',
-                        );
-                        return Column(
-                          children: [
-                            _buildAvailableDonationsCard(0),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: const Color(
-                                  0xFFFF4A4A,
-                                ).withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                'Please set your location in settings.',
-                                style: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: const Color(0xFFF9F7F3),
-                                ),
-                              ),
-                            ),
-                          ],
-                        );
-                      }
+                      // We allow acceptorLocation to be null or 0.0,0.0; it will fallback to distance 0
+                      // so donations can still be shown.
 
                       return StreamBuilder<QuerySnapshot>(
                         stream:
                             FirebaseFirestore.instance
                                 .collection('donations')
-                                .where('status', isEqualTo: 'Available')
+                                .where(
+                                  'status',
+                                  whereIn: ['Available', 'available'],
+                                )
                                 .orderBy('createdAt', descending: true)
                                 .snapshots(),
                         builder: (context, snapshot) {
@@ -470,86 +489,87 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                             future: Future.wait(
                               donationDocs.map((doc) async {
                                 final data = doc.data() as Map<String, dynamic>;
-                                final establishmentId =
-                                    data['establishmentId'] as String?;
                                 double distance = double.infinity;
-                                if (establishmentId == null) {
-                                  debugPrint(
-                                    'No establishmentId for donation: ${doc.id}, data: $data',
-                                  );
-                                  return {'doc': doc, 'distance': distance};
-                                }
-                                final donorDoc =
-                                    await FirebaseFirestore.instance
-                                        .collection('users')
-                                        .doc(establishmentId)
-                                        .get();
-                                if (!donorDoc.exists) {
-                                  debugPrint(
-                                    'Donor document not found for establishmentId: $establishmentId',
-                                  );
-                                  return {'doc': doc, 'distance': distance};
-                                }
-                                final donorData = donorDoc.data()!;
-                                // Check for both 'location' and 'Location'
-                                Map<String, dynamic>? locationData;
-                                if (donorData.containsKey('location')) {
-                                  locationData =
-                                      donorData['location']
-                                          as Map<String, dynamic>?;
-                                } else if (donorData.containsKey('Location')) {
-                                  locationData =
-                                      donorData['Location']
-                                          as Map<String, dynamic>?;
-                                }
-                                if (locationData == null) {
-                                  debugPrint(
-                                    'No location field in donor document: $establishmentId, data: $donorData',
-                                  );
-                                  return {'doc': doc, 'distance': distance};
-                                }
-                                // Handle both lowercase and uppercase latitude/longitude
-                                num? latitude =
-                                    locationData['latitude'] ??
-                                    locationData['Latitude'];
-                                num? longitude =
-                                    locationData['longitude'] ??
-                                    locationData['Longitude'];
-                                if (latitude == null || longitude == null) {
-                                  debugPrint(
-                                    'Missing latitude/longitude for donor: $establishmentId, location: $locationData',
-                                  );
-                                  return {'doc': doc, 'distance': distance};
-                                }
-                                if (latitude is! num || longitude is! num) {
-                                  debugPrint(
-                                    'Non-numeric coordinates for donor: $establishmentId, latitude: $latitude, longitude: $longitude',
-                                  );
-                                  return {'doc': doc, 'distance': distance};
-                                }
-                                if (latitude.abs() > 90 ||
-                                    longitude.abs() > 180) {
-                                  debugPrint(
-                                    'Invalid coordinates for donor: $establishmentId, latitude: $latitude, longitude: $longitude',
-                                  );
-                                  return {'doc': doc, 'distance': distance};
-                                }
-                                final donorLocation = LatLng(
-                                  latitude.toDouble(),
-                                  longitude.toDouble(),
-                                );
-                                distance = calculateDistance(
-                                  acceptorLocation,
-                                  donorLocation,
-                                );
-                                debugPrint(
-                                  'Donation ${doc.id}: Donor $establishmentId at $donorLocation (lat: ${donorLocation.latitude}, lng: ${donorLocation.longitude}), distance: $distance km',
-                                );
-                                if (distance < 0) {
-                                  debugPrint(
-                                    'Negative distance detected for donation ${doc.id}: $distance km',
+                                LatLng? donorLocation;
+
+                                // 1. Try to get location from donation doc itself (GeoPoint)
+                                if (data.containsKey('location') &&
+                                    data['location'] is GeoPoint) {
+                                  final gp = data['location'] as GeoPoint;
+                                  donorLocation = LatLng(
+                                    gp.latitude,
+                                    gp.longitude,
                                   );
                                 }
+
+                                // 2. If not in donation, fallback to donor user lookup
+                                if (donorLocation == null) {
+                                  final establishmentId =
+                                      data['establishmentId'] as String?;
+                                  if (establishmentId != null) {
+                                    if (establishmentId ==
+                                        'guest_establishment') {
+                                      // Skip user lookup for guest since this id doesn't exist in users collection
+                                      debugPrint(
+                                        'Bypassing user lookup for guest_establishment',
+                                      );
+                                      // Give it a dummy location so it doesn't fail distance checks completely if we want to show it
+                                      donorLocation = const LatLng(0, 0);
+                                    } else {
+                                      final donorDoc =
+                                          await FirebaseFirestore.instance
+                                              .collection('users')
+                                              .doc(establishmentId)
+                                              .get();
+                                      if (donorDoc.exists) {
+                                        final donorData = donorDoc.data()!;
+                                        Map<String, dynamic>? locationData;
+                                        if (donorData.containsKey('location')) {
+                                          locationData =
+                                              donorData['location']
+                                                  as Map<String, dynamic>?;
+                                        } else if (donorData.containsKey(
+                                          'Location',
+                                        )) {
+                                          locationData =
+                                              donorData['Location']
+                                                  as Map<String, dynamic>?;
+                                        }
+                                        if (locationData != null) {
+                                          num? latitude =
+                                              locationData['latitude'] ??
+                                              locationData['Latitude'];
+                                          num? longitude =
+                                              locationData['longitude'] ??
+                                              locationData['Longitude'];
+                                          if (latitude != null &&
+                                              longitude != null) {
+                                            donorLocation = LatLng(
+                                              latitude.toDouble(),
+                                              longitude.toDouble(),
+                                            );
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+
+                                if (donorLocation != null) {
+                                  // Use Haversine for initial check/display, or API for road distance
+                                  if (acceptorLocation != null &&
+                                      acceptorLocation.latitude != 0.0 &&
+                                      acceptorLocation.longitude != 0.0) {
+                                    distance = calculateDistance(
+                                      acceptorLocation,
+                                      donorLocation,
+                                    );
+                                  } else {
+                                    // If acceptor has no location, we just show all by defaulting distance to 0
+                                    distance = 0.0;
+                                  }
+                                }
+
                                 return {'doc': doc, 'distance': distance};
                               }),
                             ),
@@ -590,15 +610,18 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                               }
 
                               final donationItems = futureSnapshot.data!;
-                              // Filter donations within maxDistanceKm
+                              // Filter donations within selected distance limit
                               final filteredDonations =
                                   donationItems
                                       .where(
                                         (item) =>
-                                            item['distance'].isFinite &&
-                                            item['distance'] <= maxDistanceKm,
+                                            maxDistanceKm >= 150 ||
+                                            (item['distance'].isFinite &&
+                                                item['distance'] <=
+                                                    maxDistanceKm),
                                       )
                                       .toList();
+
                               final invalidDistances =
                                   donationItems
                                       .where(
@@ -629,7 +652,7 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
-                                        'No donations available within ${maxDistanceKm.round()} km. Adjust your range in settings.',
+                                        'No donations available within ${maxDistanceKm > 500 ? "any range" : "${maxDistanceKm.round()} km"}. Adjust your filter in Settings.',
                                         style: GoogleFonts.inter(
                                           fontSize: 14,
                                           color: const Color(0xFFB0B0B0),
@@ -747,16 +770,45 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                                                     ),
                                                   ),
                                                   const SizedBox(height: 4),
-                                                  Text(
-                                                    distance.isFinite
-                                                        ? 'Distance: ${distance.toStringAsFixed(1)} km'
-                                                        : 'Distance: Unknown',
-                                                    style: GoogleFonts.inter(
-                                                      fontSize: 12,
-                                                      color: const Color(
-                                                        0xFF39FF14,
-                                                      ),
-                                                    ),
+                                                  FutureBuilder<double?>(
+                                                    future:
+                                                        MapsService.getRoadDistance(
+                                                          acceptorLocation ??
+                                                              const LatLng(
+                                                                0,
+                                                                0,
+                                                              ),
+                                                          LatLng(
+                                                            (data['location']
+                                                                    as GeoPoint)
+                                                                .latitude,
+                                                            (data['location']
+                                                                    as GeoPoint)
+                                                                .longitude,
+                                                          ),
+                                                        ),
+                                                    builder: (
+                                                      context,
+                                                      distSnapshot,
+                                                    ) {
+                                                      final roadDist =
+                                                          distSnapshot.data;
+                                                      return Text(
+                                                        roadDist != null
+                                                            ? 'Road Distance: ${roadDist.toStringAsFixed(1)} km'
+                                                            : (distance.isFinite
+                                                                ? 'Est. Distance: ${distance.toStringAsFixed(1)} km'
+                                                                : 'Distance: Unknown'),
+                                                        style:
+                                                            GoogleFonts.inter(
+                                                              fontSize: 12,
+                                                              color:
+                                                                  const Color(
+                                                                    0xFF39FF14,
+                                                                  ),
+                                                            ),
+                                                      );
+                                                    },
                                                   ),
                                                 ],
                                               ),
