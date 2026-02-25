@@ -275,15 +275,21 @@ class _SignupScreenState extends State<SignupScreen>
                           : const Color(0xFFF9F7F3),
                 ),
                 const SizedBox(width: 4),
-                Text(
-                  role,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 11,
-                    color:
-                        isSelected
-                            ? const Color(0xFF1A3C34)
-                            : const Color(0xFFF9F7F3),
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      role,
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                        color:
+                            isSelected
+                                ? const Color(0xFF1A3C34)
+                                : const Color(0xFFF9F7F3),
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -637,6 +643,7 @@ class _SignupScreenState extends State<SignupScreen>
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
+                              isExpanded: true,
                               value:
                                   _selectedRole == 'Food Establishment'
                                       ? _establishmentType
@@ -696,11 +703,14 @@ class _SignupScreenState extends State<SignupScreen>
                                       .map(
                                         (type) => DropdownMenuItem(
                                           value: type,
-                                          child: Text(
-                                            type,
-                                            style: GoogleFonts.inter(
-                                              fontSize: 16,
-                                              color: const Color(0xFFF9F7F3),
+                                          child: FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Text(
+                                              type,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 16,
+                                                color: const Color(0xFFF9F7F3),
+                                              ),
                                             ),
                                           ),
                                         ),

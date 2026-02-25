@@ -12,7 +12,8 @@ class AcceptorProfile extends StatefulWidget {
   State<AcceptorProfile> createState() => _AcceptorProfileState();
 }
 
-class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProviderStateMixin {
+class _AcceptorProfileState extends State<AcceptorProfile>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animController;
   late Animation<double> _fadeAnimation;
   bool _notificationsEnabled = true;
@@ -25,9 +26,10 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
       vsync: this,
       duration: const Duration(milliseconds: 800),
     );
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOut),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOut));
     _animController.forward();
   }
 
@@ -54,108 +56,173 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
         SnackBar(
           content: Text(
             'Failed to sign out: ${e.toString().split('] ').last}',
-            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
+            style: GoogleFonts.inter(
+              fontSize: 14,
+              color: const Color(0xFFF9F7F3),
+            ),
           ),
           backgroundColor: const Color(0xFFFF4A4A),
           duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         ),
       );
     }
   }
 
-  Future<void> _editProfile(BuildContext context, String currentOrgName, String currentOrgType) async {
+  Future<void> _editProfile(
+    BuildContext context,
+    String currentOrgName,
+    String currentOrgType,
+  ) async {
     final orgNameController = TextEditingController(text: currentOrgName);
     final orgTypeController = TextEditingController(text: currentOrgType);
     bool hasError = false;
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF2D2D2D),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          title: Text(
-            'Edit Profile',
-            style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFFF9F7F3)),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: orgNameController,
-                style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
-                decoration: InputDecoration(
-                  labelText: 'Organization Name',
-                  labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
-                  filled: true,
-                  fillColor: const Color(0xFF3A3A3A),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(
+      builder:
+          (context) => StatefulBuilder(
+            builder:
+                (context, setDialogState) => AlertDialog(
+                  backgroundColor: const Color(0xFF2D2D2D),
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
                   ),
-                  errorText: hasError ? 'Organization name cannot be empty' : null,
-                ),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: orgTypeController.text.isEmpty ? null : orgTypeController.text,
-                style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
-                decoration: InputDecoration(
-                  labelText: 'Organization Type',
-                  labelStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
-                  filled: true,
-                  fillColor: const Color(0xFF3A3A3A),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: Color(0xFF39FF14), width: 2),
+                  title: Text(
+                    'Edit Profile',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFF9F7F3),
+                    ),
                   ),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextField(
+                        controller: orgNameController,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          color: const Color(0xFFF9F7F3),
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Organization Name',
+                          labelStyle: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: const Color(0xFFB0B0B0),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFF3A3A3A),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF39FF14),
+                              width: 2,
+                            ),
+                          ),
+                          errorText:
+                              hasError
+                                  ? 'Organization name cannot be empty'
+                                  : null,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        value:
+                            orgTypeController.text.isEmpty
+                                ? null
+                                : orgTypeController.text,
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          color: const Color(0xFFF9F7F3),
+                        ),
+                        decoration: InputDecoration(
+                          labelText: 'Organization Type',
+                          labelStyle: GoogleFonts.inter(
+                            fontSize: 14,
+                            color: const Color(0xFFB0B0B0),
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFF3A3A3A),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF39FF14),
+                              width: 2,
+                            ),
+                          ),
+                        ),
+                        dropdownColor: const Color(0xFF3A3A3A),
+                        items:
+                            ['NGO', 'Food Bank', 'Community Org', 'Other']
+                                .map(
+                                  (type) => DropdownMenuItem(
+                                    value: type,
+                                    child: Text(type),
+                                  ),
+                                )
+                                .toList(),
+                        onChanged: (value) {
+                          orgTypeController.text = value ?? '';
+                        },
+                        validator:
+                            (value) =>
+                                value == null
+                                    ? 'Please select an organization type'
+                                    : null,
+                      ),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: Text(
+                        'Cancel',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: const Color(0xFFB0B0B0),
+                        ),
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        final orgName = orgNameController.text.trim();
+                        if (orgName.isEmpty) {
+                          setDialogState(() => hasError = true);
+                          return;
+                        }
+                        Navigator.pop(context, true);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF39FF14),
+                        foregroundColor: const Color(0xFF1A3C34),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        'Save',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                dropdownColor: const Color(0xFF3A3A3A),
-                items: ['NGO', 'Food Bank', 'Community Organization', 'Other']
-                    .map((type) => DropdownMenuItem(value: type, child: Text(type)))
-                    .toList(),
-                onChanged: (value) {
-                  orgTypeController.text = value ?? '';
-                },
-                validator: (value) => value == null ? 'Please select an organization type' : null,
-              ),
-            ],
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text(
-                'Cancel',
-                style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFB0B0B0)),
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                final orgName = orgNameController.text.trim();
-                if (orgName.isEmpty) {
-                  setDialogState(() => hasError = true);
-                  return;
-                }
-                Navigator.pop(context, true);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF39FF14),
-                foregroundColor: const Color(0xFF1A3C34),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Text(
-                'Save',
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
 
     if (result == true && mounted) {
@@ -173,12 +240,17 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
           SnackBar(
             content: Text(
               'Profile updated successfully',
-              style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1A3C34)),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: const Color(0xFF1A3C34),
+              ),
             ),
             backgroundColor: const Color(0xFF39FF14),
             duration: const Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
         );
@@ -187,12 +259,17 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
           SnackBar(
             content: Text(
               'Failed to update profile: ${e.toString().split('] ').last}',
-              style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFFF9F7F3)),
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                color: const Color(0xFFF9F7F3),
+              ),
             ),
             backgroundColor: const Color(0xFFFF4A4A),
             duration: const Duration(seconds: 3),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
         );
@@ -206,27 +283,41 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
   void _showInfoDialog(BuildContext context, String title, String content) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2D2D2D),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text(
-          title,
-          style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: const Color(0xFFF9F7F3)),
-        ),
-        content: Text(
-          content,
-          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400, color: const Color(0xFFB0B0B0)),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Close',
-              style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF39FF14)),
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: const Color(0xFF2D2D2D),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
+            title: Text(
+              title,
+              style: GoogleFonts.inter(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFFF9F7F3),
+              ),
+            ),
+            content: Text(
+              content,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: FontWeight.w400,
+                color: const Color(0xFFB0B0B0),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'Close',
+                  style: GoogleFonts.inter(
+                    fontSize: 14,
+                    color: const Color(0xFF39FF14),
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -291,50 +382,83 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
                         ),
                         child: Text(
                           'Please log in to view your profile.',
-                          style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            color: const Color(0xFFF9F7F3),
+                          ),
                         ),
                       )
                     else
                       StreamBuilder<DocumentSnapshot>(
-                        stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+                        stream:
+                            FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .snapshots(),
                         builder: (context, snapshot) {
                           String orgName = 'Organization';
                           String email = 'email@example.com';
                           String orgType = 'Type';
 
                           if (snapshot.hasError) {
-                            debugPrint('Error loading profile: ${snapshot.error}');
+                            debugPrint(
+                              'Error loading profile: ${snapshot.error}',
+                            );
                             return Container(
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFFF4A4A).withOpacity(0.15),
+                                color: const Color(
+                                  0xFFFF4A4A,
+                                ).withOpacity(0.15),
                                 borderRadius: BorderRadius.circular(14),
                               ),
                               child: Row(
                                 children: [
-                                  const Icon(Icons.error_outline, color: Color(0xFFFF4A4A), size: 20),
+                                  const Icon(
+                                    Icons.error_outline,
+                                    color: Color(0xFFFF4A4A),
+                                    size: 20,
+                                  ),
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
                                       'Failed to load profile. Tap to retry.',
-                                      style: GoogleFonts.inter(fontSize: 16, color: const Color(0xFFF9F7F3)),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 16,
+                                        color: const Color(0xFFF9F7F3),
+                                      ),
                                     ),
                                   ),
                                   IconButton(
-                                    icon: const Icon(Icons.refresh, color: Color(0xFF39FF14)),
-                                    onPressed: () => (context as Element).markNeedsBuild(),
+                                    icon: const Icon(
+                                      Icons.refresh,
+                                      color: Color(0xFF39FF14),
+                                    ),
+                                    onPressed:
+                                        () =>
+                                            (context as Element)
+                                                .markNeedsBuild(),
                                   ),
                                 ],
                               ),
                             );
                           }
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator(color: Color(0xFF39FF14)));
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF39FF14),
+                              ),
+                            );
                           }
                           if (snapshot.hasData && snapshot.data!.exists) {
-                            final data = snapshot.data!.data() as Map<String, dynamic>;
+                            final data =
+                                snapshot.data!.data() as Map<String, dynamic>;
                             orgName = data['org_name'] ?? 'Organization';
-                            email = data['email'] ?? user.email ?? 'email@example.com';
+                            email =
+                                data['email'] ??
+                                user.email ??
+                                'email@example.com';
                             orgType = data['org_type'] ?? 'Type';
                           }
 
@@ -344,25 +468,48 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2D2D2D).withOpacity(0.85),
+                                  color: const Color(
+                                    0xFF2D2D2D,
+                                  ).withOpacity(0.85),
                                   borderRadius: BorderRadius.circular(14),
                                   boxShadow: [
-                                    BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6, offset: const Offset(0, 2)),
-                                    BoxShadow(color: const Color(0xFF39FF14).withOpacity(0.05), blurRadius: 4, spreadRadius: 0),
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF39FF14,
+                                      ).withOpacity(0.05),
+                                      blurRadius: 4,
+                                      spreadRadius: 0,
+                                    ),
                                   ],
-                                  border: Border.all(color: const Color(0xFF39FF14).withOpacity(0.1)),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF39FF14,
+                                    ).withOpacity(0.1),
+                                  ),
                                 ),
                                 child: Row(
                                   children: [
                                     CircleAvatar(
                                       radius: 30,
-                                      backgroundColor: const Color(0xFF39FF14).withOpacity(0.3),
-                                      child: const Icon(Icons.person, size: 36, color: Color(0xFFF9F7F3)),
+                                      backgroundColor: const Color(
+                                        0xFF39FF14,
+                                      ).withOpacity(0.3),
+                                      child: const Icon(
+                                        Icons.person,
+                                        size: 36,
+                                        color: Color(0xFFF9F7F3),
+                                      ),
                                     ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           Text(
                                             orgName,
@@ -400,29 +547,57 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2D2D2D).withOpacity(0.85),
+                                  color: const Color(
+                                    0xFF2D2D2D,
+                                  ).withOpacity(0.85),
                                   borderRadius: BorderRadius.circular(14),
                                   boxShadow: [
-                                    BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6, offset: const Offset(0, 2)),
-                                    BoxShadow(color: const Color(0xFF39FF14).withOpacity(0.05), blurRadius: 4, spreadRadius: 0),
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF39FF14,
+                                      ).withOpacity(0.05),
+                                      blurRadius: 4,
+                                      spreadRadius: 0,
+                                    ),
                                   ],
-                                  border: Border.all(color: const Color(0xFF39FF14).withOpacity(0.1)),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF39FF14,
+                                    ).withOpacity(0.1),
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'Settings',
-                                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFFF9F7F3)),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFFF9F7F3),
+                                      ),
                                     ),
                                     const SizedBox(height: 12),
                                     ListTile(
                                       contentPadding: EdgeInsets.zero,
                                       title: Text(
                                         'Edit Profile',
-                                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFFF9F7F3)),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFFF9F7F3),
+                                        ),
                                       ),
-                                      trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF39FF14), size: 16),
+                                      trailing: const Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: Color(0xFF39FF14),
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         HapticFeedback.lightImpact();
                                         _editProfile(context, orgName, orgType);
@@ -432,14 +607,20 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
                                       contentPadding: EdgeInsets.zero,
                                       title: Text(
                                         'Notifications',
-                                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFFF9F7F3)),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFFF9F7F3),
+                                        ),
                                       ),
                                       trailing: Switch(
                                         value: _notificationsEnabled,
                                         activeColor: const Color(0xFF39FF14),
                                         onChanged: (value) {
                                           HapticFeedback.lightImpact();
-                                          setState(() => _notificationsEnabled = value);
+                                          setState(
+                                            () => _notificationsEnabled = value,
+                                          );
                                         },
                                       ),
                                     ),
@@ -450,34 +631,66 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
                               Container(
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF2D2D2D).withOpacity(0.85),
+                                  color: const Color(
+                                    0xFF2D2D2D,
+                                  ).withOpacity(0.85),
                                   borderRadius: BorderRadius.circular(14),
                                   boxShadow: [
-                                    BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6, offset: const Offset(0, 2)),
-                                    BoxShadow(color: const Color(0xFF39FF14).withOpacity(0.05), blurRadius: 4, spreadRadius: 0),
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.08),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFF39FF14,
+                                      ).withOpacity(0.05),
+                                      blurRadius: 4,
+                                      spreadRadius: 0,
+                                    ),
                                   ],
-                                  border: Border.all(color: const Color(0xFF39FF14).withOpacity(0.1)),
+                                  border: Border.all(
+                                    color: const Color(
+                                      0xFF39FF14,
+                                    ).withOpacity(0.1),
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       'About Renosh',
-                                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFFF9F7F3)),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w700,
+                                        color: const Color(0xFFF9F7F3),
+                                      ),
                                     ),
                                     const SizedBox(height: 12),
                                     Text(
                                       'Renosh helps establishments manage surplus food by facilitating donations to those in need. Version 1.0.0.',
-                                      style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400, color: const Color(0xFFB0B0B0)),
+                                      style: GoogleFonts.inter(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w400,
+                                        color: const Color(0xFFB0B0B0),
+                                      ),
                                     ),
                                     const SizedBox(height: 12),
                                     ListTile(
                                       contentPadding: EdgeInsets.zero,
                                       title: Text(
                                         'Terms of Service',
-                                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFFF9F7F3)),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFFF9F7F3),
+                                        ),
                                       ),
-                                      trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF39FF14), size: 16),
+                                      trailing: const Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: Color(0xFF39FF14),
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         HapticFeedback.lightImpact();
                                         _showInfoDialog(
@@ -491,9 +704,17 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
                                       contentPadding: EdgeInsets.zero,
                                       title: Text(
                                         'Privacy Policy',
-                                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFFF9F7F3)),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFFF9F7F3),
+                                        ),
                                       ),
-                                      trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF39FF14), size: 16),
+                                      trailing: const Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: Color(0xFF39FF14),
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         HapticFeedback.lightImpact();
                                         _showInfoDialog(
@@ -507,9 +728,17 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
                                       contentPadding: EdgeInsets.zero,
                                       title: Text(
                                         'Contact Support',
-                                        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, color: const Color(0xFFF9F7F3)),
+                                        style: GoogleFonts.inter(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w500,
+                                          color: const Color(0xFFF9F7F3),
+                                        ),
                                       ),
-                                      trailing: const Icon(Icons.arrow_forward_ios, color: Color(0xFF39FF14), size: 16),
+                                      trailing: const Icon(
+                                        Icons.arrow_forward_ios,
+                                        color: Color(0xFF39FF14),
+                                        size: 16,
+                                      ),
                                       onTap: () {
                                         HapticFeedback.lightImpact();
                                         _showInfoDialog(
@@ -525,30 +754,45 @@ class _AcceptorProfileState extends State<AcceptorProfile> with SingleTickerProv
                               const SizedBox(height: 20),
                               Center(
                                 child: ElevatedButton(
-                                  onPressed: _isLoading
-                                      ? null
-                                      : () {
-                                          HapticFeedback.lightImpact();
-                                          _signOut(context);
-                                        },
+                                  onPressed:
+                                      _isLoading
+                                          ? null
+                                          : () {
+                                            HapticFeedback.lightImpact();
+                                            _signOut(context);
+                                          },
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFFFF4A4A),
                                     foregroundColor: const Color(0xFFF9F7F3),
-                                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
                                     elevation: 0,
-                                    shadowColor: const Color(0xFFFF4A4A).withOpacity(0.3),
+                                    shadowColor: const Color(
+                                      0xFFFF4A4A,
+                                    ).withOpacity(0.3),
                                   ),
-                                  child: _isLoading
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(color: Color(0xFFF9F7F3), strokeWidth: 2),
-                                        )
-                                      : Text(
-                                          'Sign Out',
-                                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600),
-                                        ),
+                                  child:
+                                      _isLoading
+                                          ? const SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              color: Color(0xFFF9F7F3),
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                          : Text(
+                                            'Sign Out',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
                                 ),
                               ),
                               const SizedBox(height: 20),
