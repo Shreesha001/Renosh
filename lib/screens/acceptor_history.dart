@@ -312,9 +312,8 @@ class AcceptorHistory extends StatelessWidget {
                                 .where('acceptorId', isEqualTo: user.uid)
                                 .where(
                                   'claimStatus',
-                                  whereIn: ['pending', 'accepted', 'rejected'],
+                                  whereIn: ['pending', 'approved', 'rejected'],
                                 )
-                                .orderBy('claimedAt', descending: true)
                                 .snapshots(),
                         builder: (context, snapshot) {
                           if (snapshot.connectionState ==
@@ -370,12 +369,27 @@ class AcceptorHistory extends StatelessWidget {
                           debugPrint(
                             'Found ${snapshot.data!.docs.length} claimed donations for user: ${user.uid}',
                           );
+
+                          final donationList = snapshot.data!.docs.toList();
+                          // Sort locally in memory to avoid composite index requirement
+                          donationList.sort((a, b) {
+                            final aData = a.data() as Map<String, dynamic>;
+                            final bData = b.data() as Map<String, dynamic>;
+                            final aTime =
+                                (aData['claimedAt'] as Timestamp?)?.toDate() ??
+                                DateTime(0);
+                            final bTime =
+                                (bData['claimedAt'] as Timestamp?)?.toDate() ??
+                                DateTime(0);
+                            return bTime.compareTo(aTime);
+                          });
+
                           return ListView.builder(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
-                            itemCount: snapshot.data!.docs.length,
+                            itemCount: donationList.length,
                             itemBuilder: (context, index) {
-                              final doc = snapshot.data!.docs[index];
+                              final doc = donationList[index];
                               final data = doc.data() as Map<String, dynamic>;
                               final itemName = data['item_name'] as String;
                               final quantity = data['quantity'] as int;
@@ -438,7 +452,7 @@ class AcceptorHistory extends StatelessWidget {
                                       debugPrint(
                                         'Tapped donation ${doc.id}: claimStatus=$claimStatus',
                                       );
-                                      if (claimStatus == 'accepted') {
+                                      if (claimStatus == 'approved') {
                                         _showDonorDetailsDialog(
                                           context,
                                           donorName: donorName,
@@ -551,7 +565,7 @@ class AcceptorHistory extends StatelessWidget {
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
                                               color:
-                                                  claimStatus == 'accepted'
+                                                  claimStatus == 'approved'
                                                       ? const Color(0xFF39FF14)
                                                       : claimStatus ==
                                                           'rejected'

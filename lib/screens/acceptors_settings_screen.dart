@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../services/maps_service.dart';
 
 class AcceptorSettingsScreen extends StatefulWidget {
   const AcceptorSettingsScreen({super.key});
@@ -15,12 +14,14 @@ class AcceptorSettingsScreen extends StatefulWidget {
 
 class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
   double _maxDistanceKm = 50;
-  final TextEditingController _pincodeController = TextEditingController();
-  final TextEditingController _cityController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
-  LatLng? _selectedLocation;
   bool _isLoading = false;
-  String _errorMessage = '';
+  bool _isFetchingGPS = false;
+  String _statusMessage = '';
+  bool _isError = false;
+
+  double? _latitude;
+  double? _longitude;
+  String _locationLabel = '';
 
   @override
   void initState() {
@@ -31,7 +32,6 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
   Future<void> _loadCurrentSettings() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-
     try {
       final doc =
           await FirebaseFirestore.instance
@@ -40,93 +40,105 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
               .get();
       if (doc.exists) {
         final data = doc.data()!;
+        final loaded = (data['maxDistanceKm'] as num?)?.toDouble() ?? 50;
+        final loc = data['location'];
         setState(() {
-          // Clamp maxDistanceKm to the valid range [1.0, 150.0]
-          final loadedDistance =
-              (data['maxDistanceKm'] as num?)?.toDouble() ?? 50;
-          _maxDistanceKm = loadedDistance.clamp(1.0, 150.0);
-          if (data.containsKey('location')) {
-            _selectedLocation = LatLng(
-              (data['location']['latitude'] as num).toDouble(),
-              (data['location']['longitude'] as num).toDouble(),
-            );
-            _getAddressFromLatLng(_selectedLocation!);
+          _maxDistanceKm = loaded.clamp(1.0, 150.0);
+          if (loc != null) {
+            _latitude = (loc['latitude'] as num?)?.toDouble();
+            _longitude = (loc['longitude'] as num?)?.toDouble();
+            if (_latitude != null && _longitude != null) {
+              _locationLabel =
+                  'Lat: ${_latitude!.toStringAsFixed(4)}, Lng: ${_longitude!.toStringAsFixed(4)}';
+            }
           }
         });
-        debugPrint(
-          'Loaded settings: maxDistanceKm=$_maxDistanceKm, location=$_selectedLocation',
-        );
+        // Try reverse-geocoding to show a friendly address label
+        if (_latitude != null && _longitude != null) {
+          _reverseGeocode(_latitude!, _longitude!);
+        }
       }
     } catch (e) {
       debugPrint('Error loading settings: $e');
     }
   }
 
-  Future<void> _getAddressFromLatLng(LatLng position) async {
+  Future<void> _reverseGeocode(double lat, double lng) async {
     try {
-      final placemarks = await placemarkFromCoordinates(
-        position.latitude,
-        position.longitude,
-      );
-      if (placemarks.isNotEmpty) {
-        final placemark = placemarks.first;
-        final pincode = placemark.postalCode ?? '';
-        setState(() {
-          _pincodeController.text = pincode;
-        });
+      final placemarks = await placemarkFromCoordinates(lat, lng);
+      if (placemarks.isNotEmpty && mounted) {
+        final p = placemarks.first;
+        final parts = [
+          p.subLocality,
+          p.locality,
+          p.postalCode,
+        ].where((s) => s != null && s.isNotEmpty).join(', ');
+        if (parts.isNotEmpty) {
+          setState(() => _locationLabel = parts);
+        }
       }
-    } catch (e) {
-      debugPrint('Error reverse geocoding: $e');
-    }
+    } catch (_) {}
   }
 
-  Future<void> _setLocationFromAddressAndPincode() async {
-    final pincode = _pincodeController.text.trim();
-    final city = _cityController.text.trim();
-    final address = _addressController.text.trim();
-
-    if (pincode.isEmpty) {
-      setState(() {
-        _errorMessage = 'Please enter at least a pincode';
-      });
-      return;
-    }
-
-    final query = [
-      address,
-      city,
-      pincode,
-    ].where((s) => s.isNotEmpty).join(', ');
-
+  Future<void> _useDeviceGPS() async {
     setState(() {
-      _isLoading = true;
-      _errorMessage = '';
+      _isFetchingGPS = true;
+      _statusMessage = '';
+      _isError = false;
     });
 
     try {
-      final location = await MapsService.getLatLngFromAddress(query);
-      if (location != null) {
-        setState(() {
-          _selectedLocation = location;
-        });
-        debugPrint('Location set: $_selectedLocation');
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Pincode valid! Location found.')),
-        );
-      } else {
-        setState(() {
-          _errorMessage = 'Could not find location for the provided pincode';
-        });
+      // Check & request permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
       }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() {
+          _statusMessage =
+              'Location permission denied. Please enable in phone settings.';
+          _isError = true;
+        });
+        return;
+      }
+
+      // Check if location service is on
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _statusMessage =
+              'Please turn on Location Services in your phone settings.';
+          _isError = true;
+        });
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+        _locationLabel =
+            'Lat: ${_latitude!.toStringAsFixed(4)}, Lng: ${_longitude!.toStringAsFixed(4)}';
+        _statusMessage = 'GPS location captured successfully!';
+        _isError = false;
+      });
+
+      // Try to show a human-readable address
+      await _reverseGeocode(position.latitude, position.longitude);
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error finding location: $e';
+        _statusMessage = 'Error getting GPS location: $e';
+        _isError = true;
       });
-      debugPrint('Error geocoding pincode: $e');
+      debugPrint('GPS error: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isFetchingGPS = false);
     }
   }
 
@@ -134,74 +146,64 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    if (_selectedLocation == null &&
-        _pincodeController.text.trim().isNotEmpty) {
-      // Auto-fetch if user forgot to click "Set Location"
-      await _setLocationFromAddressAndPincode();
-    }
-
-    if (_selectedLocation == null) {
+    if (_latitude == null || _longitude == null) {
       setState(() {
-        _errorMessage = 'Please set your location or enter a valid Pincode';
+        _statusMessage = 'Please set your location first using the GPS button.';
+        _isError = true;
       });
       return;
     }
 
     setState(() {
       _isLoading = true;
-      _errorMessage = '';
+      _statusMessage = '';
     });
 
     try {
       await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'maxDistanceKm': _maxDistanceKm,
-        'location': {
-          'latitude': _selectedLocation!.latitude,
-          'longitude': _selectedLocation!.longitude,
-        },
+        'location': {'latitude': _latitude, 'longitude': _longitude},
       }, SetOptions(merge: true));
+
       debugPrint(
-        'Saved settings: maxDistanceKm=$_maxDistanceKm, location=$_selectedLocation',
+        'Saved: lat=$_latitude, lng=$_longitude, maxDist=$_maxDistanceKm',
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Settings saved successfully!',
-            style: GoogleFonts.inter(
-              color: Colors.black,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Settings saved!',
+              style: GoogleFonts.inter(
+                color: Colors.black,
+                fontWeight: FontWeight.w600,
+              ),
             ),
+            backgroundColor: const Color(0xFF39FF14),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
-          backgroundColor: const Color(0xFF39FF14),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        ),
-      );
-      Navigator.of(context).pop();
+        );
+        Navigator.of(context).pop();
+      }
     } catch (e) {
       setState(() {
-        _errorMessage = 'Error saving settings: $e';
+        _statusMessage = 'Error saving: $e';
+        _isError = true;
       });
-      debugPrint('Error saving settings: $e');
+      debugPrint('Save error: $e');
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
-  void dispose() {
-    _pincodeController.dispose();
-    _cityController.dispose();
-    _addressController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final bool locationSet = _latitude != null && _longitude != null;
+
     return Scaffold(
       body: Stack(
         children: [
@@ -224,6 +226,7 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Header
                     Row(
                       children: [
                         IconButton(
@@ -232,12 +235,7 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                             color: Color(0xFFF9F7F3),
                             size: 28,
                           ),
-                          onPressed: () {
-                            debugPrint(
-                              'Back button pressed on AcceptorSettingsScreen',
-                            );
-                            Navigator.of(context).pop();
-                          },
+                          onPressed: () => Navigator.of(context).pop(),
                         ),
                         const SizedBox(width: 8),
                         Text(
@@ -251,6 +249,8 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                       ],
                     ),
                     const SizedBox(height: 24),
+
+                    // Location Section
                     Text(
                       'Your Location',
                       style: GoogleFonts.inter(
@@ -259,152 +259,41 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                         color: const Color(0xFFF9F7F3),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
-                      'Enter your address details to set your location',
+                      'Your location is used to find nearby donations. Tap the button below to use your device GPS.',
                       style: GoogleFonts.inter(
                         fontSize: 14,
-                        fontWeight: FontWeight.w400,
                         color: const Color(0xFFB0B0B0),
                       ),
                     ),
                     const SizedBox(height: 16),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2D2D2D),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: TextField(
-                        controller: _addressController,
-                        style: GoogleFonts.inter(
-                          fontSize: 14,
-                          color: const Color(0xFFF9F7F3),
-                        ),
-                        decoration: InputDecoration(
-                          hintText: 'Street Address (Optional)',
-                          hintStyle: GoogleFonts.inter(
-                            fontSize: 14,
-                            color: const Color(0xFFB0B0B0),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.home,
-                            color: Color(0xFF39FF14),
-                          ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 14,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2D2D2D),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: TextField(
-                              controller: _cityController,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: const Color(0xFFF9F7F3),
-                              ),
-                              decoration: InputDecoration(
-                                hintText: 'City (Optional)',
-                                hintStyle: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: const Color(0xFFB0B0B0),
-                                ),
-                                prefixIcon: const Icon(
-                                  Icons.location_city,
-                                  color: Color(0xFF39FF14),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 14,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2D2D2D),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: TextField(
-                              controller: _pincodeController,
-                              style: GoogleFonts.inter(
-                                fontSize: 14,
-                                color: const Color(0xFFF9F7F3),
-                              ),
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                hintText: 'Pincode',
-                                hintStyle: GoogleFonts.inter(
-                                  fontSize: 14,
-                                  color: const Color(0xFFB0B0B0),
-                                ),
-                                prefixIcon: const Icon(
-                                  Icons.location_on,
-                                  color: Color(0xFF39FF14),
-                                ),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide.none,
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 14,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
+
+                    // GPS Button
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed:
-                            _isLoading
-                                ? null
-                                : _setLocationFromAddressAndPincode,
+                      child: ElevatedButton.icon(
+                        onPressed: _isFetchingGPS ? null : _useDeviceGPS,
+                        icon:
+                            _isFetchingGPS
+                                ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Color(0xFF1A3C34),
+                                  ),
+                                )
+                                : const Icon(Icons.my_location),
+                        label: Text(
+                          _isFetchingGPS
+                              ? 'Getting GPS location...'
+                              : 'Use My Current GPS Location',
+                          style: GoogleFonts.inter(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF39FF14),
                           foregroundColor: const Color(0xFF1A3C34),
@@ -412,41 +301,78 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          elevation: 2,
-                          shadowColor: Colors.black.withOpacity(0.2),
                         ),
-                        child:
-                            _isLoading
-                                ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Color(0xFF1A3C34),
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                                : Text(
-                                  'Set Location',
-                                  style: GoogleFonts.inter(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
                       ),
                     ),
-                    if (_selectedLocation != null) ...[
-                      const SizedBox(height: 12),
+
+                    // Location Status
+                    const SizedBox(height: 12),
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color:
+                            locationSet
+                                ? const Color(0xFF39FF14).withOpacity(0.10)
+                                : const Color(0xFFFF4A4A).withOpacity(0.10),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color:
+                              locationSet
+                                  ? const Color(0xFF39FF14)
+                                  : const Color(0xFFFF4A4A),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            locationSet
+                                ? Icons.check_circle
+                                : Icons.location_off,
+                            color:
+                                locationSet
+                                    ? const Color(0xFF39FF14)
+                                    : const Color(0xFFFF4A4A),
+                            size: 18,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              locationSet
+                                  ? '📍 $_locationLabel'
+                                  : 'Location not set — tap button above',
+                              style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color:
+                                    locationSet
+                                        ? const Color(0xFF39FF14)
+                                        : const Color(0xFFB0B0B0),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Status / error message
+                    if (_statusMessage.isNotEmpty) ...[
+                      const SizedBox(height: 8),
                       Text(
-                        'Lat: ${_selectedLocation!.latitude.toStringAsFixed(6)}, '
-                        'Lng: ${_selectedLocation!.longitude.toStringAsFixed(6)}',
+                        _statusMessage,
                         style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: const Color(0xFFB0B0B0),
+                          fontSize: 13,
+                          color:
+                              _isError
+                                  ? const Color(0xFFFF4A4A)
+                                  : const Color(0xFF39FF14),
                         ),
                       ),
                     ],
-                    const SizedBox(height: 24),
+
+                    const SizedBox(height: 32),
+
+                    // Distance Range
                     Text(
                       'Maximum Distance Range',
                       style: GoogleFonts.inter(
@@ -455,16 +381,16 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                         color: const Color(0xFFF9F7F3),
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 6),
                     Text(
-                      'Set the maximum distance for viewing sellers (1–150 km)',
+                      'Show donations within this radius (1–150 km)',
                       style: GoogleFonts.inter(
                         fontSize: 14,
-                        fontWeight: FontWeight.w400,
                         color: const Color(0xFFB0B0B0),
                       ),
                     ),
                     const SizedBox(height: 16),
+
                     SliderTheme(
                       data: SliderTheme.of(context).copyWith(
                         trackHeight: 4,
@@ -489,14 +415,10 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                         value: _maxDistanceKm,
                         min: 1,
                         max: 150,
-                        divisions: 149, // Adjusted to match min/max range
+                        divisions: 149,
                         label: '${_maxDistanceKm.round()} km',
-                        onChanged: (value) {
-                          setState(() {
-                            _maxDistanceKm = value;
-                          });
-                          debugPrint('Distance slider changed to: $value km');
-                        },
+                        onChanged:
+                            (value) => setState(() => _maxDistanceKm = value),
                       ),
                     ),
                     Text(
@@ -507,29 +429,10 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                         color: const Color(0xFFF9F7F3),
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    if (_errorMessage.isNotEmpty)
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFF4A4A).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFFFF4A4A),
-                            width: 1,
-                          ),
-                        ),
-                        child: Text(
-                          _errorMessage,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                            color: const Color(0xFFF9F7F3),
-                          ),
-                        ),
-                      ),
-                    const SizedBox(height: 24),
+
+                    const SizedBox(height: 32),
+
+                    // Save Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -542,7 +445,6 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 2,
-                          shadowColor: Colors.black.withOpacity(0.2),
                         ),
                         child:
                             _isLoading
@@ -563,6 +465,7 @@ class _AcceptorSettingsScreenState extends State<AcceptorSettingsScreen> {
                                 ),
                       ),
                     ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),

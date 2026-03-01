@@ -387,27 +387,32 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
 
                       final userData =
                           userSnapshot.data!.data() as Map<String, dynamic>;
-                      final acceptorLocation =
-                          userData.containsKey('location')
-                              ? LatLng(
-                                (userData['location']['latitude'] as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                                (userData['location']['longitude'] as num?)
-                                        ?.toDouble() ??
-                                    0.0,
-                              )
-                              : null;
+
+                      // Load acceptor location - treat (0,0) as 'not set' (old dummy data)
+                      LatLng? acceptorLocation;
+                      if (userData.containsKey('location')) {
+                        final lat =
+                            (userData['location']['latitude'] as num?)
+                                ?.toDouble() ??
+                            0.0;
+                        final lng =
+                            (userData['location']['longitude'] as num?)
+                                ?.toDouble() ??
+                            0.0;
+                        if (lat != 0.0 || lng != 0.0) {
+                          acceptorLocation = LatLng(lat, lng);
+                        }
+                      }
+
                       final maxDistanceKm =
                           (userData['maxDistanceKm'] as num?)?.toDouble() ??
                           1000.0;
 
                       debugPrint(
-                        'Acceptor location: $acceptorLocation (lat: ${acceptorLocation?.latitude}, lng: ${acceptorLocation?.longitude}), maxDistanceKm: $maxDistanceKm',
+                        'Acceptor location: $acceptorLocation, maxDistanceKm: $maxDistanceKm',
                       );
 
-                      // We allow acceptorLocation to be null or 0.0,0.0; it will fallback to distance 0
-                      // so donations can still be shown.
+                      // If acceptor has no location set yet, show a prompt but still show all donations
 
                       return StreamBuilder<QuerySnapshot>(
                         stream:
@@ -796,9 +801,13 @@ class _AcceptorDashboardState extends State<AcceptorDashboard> {
                                                       return Text(
                                                         roadDist != null
                                                             ? 'Road Distance: ${roadDist.toStringAsFixed(1)} km'
-                                                            : (distance.isFinite
-                                                                ? 'Est. Distance: ${distance.toStringAsFixed(1)} km'
-                                                                : 'Distance: Unknown'),
+                                                            : (acceptorLocation ==
+                                                                    null
+                                                                ? '📍 Set location in Settings'
+                                                                : (distance
+                                                                        .isFinite
+                                                                    ? 'Est. Distance: ${distance.toStringAsFixed(1)} km'
+                                                                    : 'Distance: Unknown')),
                                                         style:
                                                             GoogleFonts.inter(
                                                               fontSize: 12,
